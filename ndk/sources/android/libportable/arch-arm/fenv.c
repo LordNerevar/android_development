@@ -20,6 +20,11 @@
 #include <fenv.h>
 #include <fenv_portable.h>
 
+#define FPSCR_ENABLE_SHIFT 8
+#define FPSCR_ENABLE_MASK  (FE_ALL_EXCEPT << FPSCR_ENABLE_SHIFT)
+
+#define FPSCR_RMODE_SHIFT 22
+
 int WRAP(fegetenv)(fenv_t* __envp) {
     fenv_t _fpscr;
     __asm__ __volatile__("vmrs %0,fpscr" : "=r" (_fpscr));
@@ -72,14 +77,14 @@ int WRAP(fetestexcept)(int __excepts) {
 int WRAP(fegetround)(void) {
     fenv_t _fpscr;
     WRAP(fegetenv)(&_fpscr);
-    return ((_fpscr >> _FPSCR_RMODE_SHIFT) & 0x3);
+    return ((_fpscr >> FPSCR_RMODE_SHIFT) & 0x3);
 }
 
 int WRAP(fesetround)(int __round) {
     fenv_t _fpscr;
     WRAP(fegetenv)(&_fpscr);
-    _fpscr &= ~(0x3 << _FPSCR_RMODE_SHIFT);
-    _fpscr |= (__round << _FPSCR_RMODE_SHIFT);
+    _fpscr &= ~(0x3 << FPSCR_RMODE_SHIFT);
+    _fpscr |= (__round << FPSCR_RMODE_SHIFT);
     WRAP(fesetenv)(&_fpscr);
     return 0;
 }
@@ -88,7 +93,7 @@ int WRAP(feholdexcept)(fenv_t* __envp) {
     fenv_t __env;
     WRAP(fegetenv)(&__env);
     *__envp = __env;
-    __env &= ~(FE_ALL_EXCEPT | _FPSCR_ENABLE_MASK);
+    __env &= ~(FE_ALL_EXCEPT | FPSCR_ENABLE_MASK);
     WRAP(fesetenv)(&__env);
     return 0;
 }
